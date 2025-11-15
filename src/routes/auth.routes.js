@@ -3,6 +3,7 @@ const router = express.Router();
 const passport = require('../config/passport');
 const authController = require('../controllers/auth.controller');
 const { authenticateUser } = require('../middleware/auth.middleware');
+const { apiKeyLimiter } = require('../middleware/rateLimiter.middleware'); // Add this
 
 // @route   GET /api/auth/google
 // @desc    Initiate Google OAuth
@@ -44,7 +45,7 @@ router.get('/me', authenticateUser, authController.getCurrentUser);
 // @route   POST /api/auth/register
 // @desc    Register a new app and get API key
 // @access  Private
-router.post('/register', authenticateUser, authController.registerApp);
+router.post('/register', apiKeyLimiter, authenticateUser, authController.registerApp);
 
 // @route   GET /api/auth/api-key
 // @desc    Get API key for an app
@@ -54,11 +55,11 @@ router.get('/api-key', authenticateUser, authController.getApiKey);
 // @route   POST /api/auth/revoke
 // @desc    Revoke an API key
 // @access  Private
-router.post('/revoke', authenticateUser, authController.revokeApiKey);
+router.post('/revoke', apiKeyLimiter, authenticateUser, authController.revokeApiKey);
 
 // @route   POST /api/auth/regenerate
 // @desc    Regenerate an API key
 // @access  Private
-router.post('/regenerate', authenticateUser, authController.regenerateApiKey);
+router.post('/regenerate', apiKeyLimiter, authenticateUser, authController.regenerateApiKey);
 
 module.exports = router;
