@@ -74,7 +74,7 @@ npm run migrate
 npm run dev
 ```
 
-The API will be available at `http://localhost:3000`
+The API will be available at `https://analytics-api-production-babf.up.railway.app`
 
 ## 🧪 Testing
 ```bash
@@ -171,10 +171,10 @@ SESSION_SECRET=your_session_secret
 # Google OAuth
 GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://analytics-api-production-babf.up.railway.app/api/auth/google/callback
 
 # Frontend
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://analytics-api-production-babf.up.railway.app
 ```
 
 ## 📈 Performance
@@ -240,6 +240,6 @@ For support, email support@yourapp.com or open an issue.
 
 ---
 
-**Live Demo**: https://your-app.up.railway.app
+**Live Demo**: [https://your-app.up.railway.app](https://analytics-api-production-babf.up.railway.app)
 
-**Documentation**: https://your-app.up.railway.app/api-docs
+**Documentation**: https://analytics-api-production-babf.up.railway.app/api-docs
