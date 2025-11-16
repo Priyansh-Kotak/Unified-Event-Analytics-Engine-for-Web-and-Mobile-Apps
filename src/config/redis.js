@@ -14,12 +14,7 @@ if (process.env.REDIS_URL) {
     },
     maxRetriesPerRequest: process.env.NODE_ENV === "test" ? 1 : 3,
     enableOfflineQueue: process.env.NODE_ENV !== "test",
-    tls:
-      process.env.NODE_ENV === "production"
-        ? {
-            rejectUnauthorized: false,
-          }
-        : undefined,
+    // TLS removed - Railway's private network doesn't use TLS
   });
 } else {
   // Local development
