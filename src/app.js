@@ -6,6 +6,7 @@ const session = require("express-session");
 const passport = require("./config/passport");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
+const { getSystemHealth } = require("./utils/monitoring");
 const {
   requestLogger,
   errorLogger,
@@ -75,12 +76,17 @@ app.get("/api-docs.json", (req, res) => {
 });
 
 // Health check
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "OK",
-    message: "Server is running",
-    timestamp: new Date().toISOString(),
-  });
+app.get("/health", async (req, res) => {
+  try {
+    const health = await getSystemHealth();
+    const statusCode = health.status === "healthy" ? 200 : 503;
+    res.status(statusCode).json(health);
+  } catch (error) {
+    res.status(503).json({
+      status: "unhealthy",
+      error: error.message,
+    });
+  }
 });
 
 // Root endpoint
@@ -117,6 +123,11 @@ app.use((err, req, res, next) => {
       message: err.message || "Internal Server Error",
     },
   });
+});
+
+// Simple health check (for load balancers)
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
 });
 
 module.exports = app;

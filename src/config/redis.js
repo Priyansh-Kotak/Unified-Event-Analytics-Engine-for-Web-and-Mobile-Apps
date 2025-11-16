@@ -1,19 +1,42 @@
 const Redis = require("ioredis");
 
-// Create Redis client
-const redis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: process.env.REDIS_PORT || 6379,
-  retryStrategy: (times) => {
-    if (process.env.NODE_ENV === "test" && times > 3) {
-      return null; // Stop retrying in tests
-    }
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  maxRetriesPerRequest: process.env.NODE_ENV === "test" ? 1 : 3,
-  enableOfflineQueue: process.env.NODE_ENV !== "test",
-});
+let redis;
+
+if (process.env.REDIS_URL) {
+  // Railway/Production with REDIS_URL
+  redis = new Redis(process.env.REDIS_URL, {
+    retryStrategy: (times) => {
+      if (process.env.NODE_ENV === "test" && times > 3) {
+        return null;
+      }
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+    maxRetriesPerRequest: process.env.NODE_ENV === "test" ? 1 : 3,
+    enableOfflineQueue: process.env.NODE_ENV !== "test",
+    tls:
+      process.env.NODE_ENV === "production"
+        ? {
+            rejectUnauthorized: false,
+          }
+        : undefined,
+  });
+} else {
+  // Local development
+  redis = new Redis({
+    host: process.env.REDIS_HOST || "localhost",
+    port: process.env.REDIS_PORT || 6379,
+    retryStrategy: (times) => {
+      if (process.env.NODE_ENV === "test" && times > 3) {
+        return null;
+      }
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+    maxRetriesPerRequest: process.env.NODE_ENV === "test" ? 1 : 3,
+    enableOfflineQueue: process.env.NODE_ENV !== "test",
+  });
+}
 
 // Handle connection events
 redis.on("connect", () => {
@@ -36,9 +59,6 @@ redis.on("ready", () => {
 
 // Cache helper functions
 const cacheService = {
-  /**
-   * Get cached data
-   */
   async get(key) {
     try {
       const data = await redis.get(key);
@@ -51,9 +71,6 @@ const cacheService = {
     }
   },
 
-  /**
-   * Set cache data with expiration
-   */
   async set(key, value, expirationInSeconds = 300) {
     try {
       await redis.setex(key, expirationInSeconds, JSON.stringify(value));
@@ -66,9 +83,6 @@ const cacheService = {
     }
   },
 
-  /**
-   * Delete cached data
-   */
   async del(key) {
     try {
       await redis.del(key);
@@ -81,9 +95,6 @@ const cacheService = {
     }
   },
 
-  /**
-   * Delete all keys matching a pattern
-   */
   async delPattern(pattern) {
     try {
       const keys = await redis.keys(pattern);
@@ -102,9 +113,6 @@ const cacheService = {
     }
   },
 
-  /**
-   * Check if key exists
-   */
   async exists(key) {
     try {
       const result = await redis.exists(key);
@@ -120,9 +128,6 @@ const cacheService = {
     }
   },
 
-  /**
-   * Flush all data (use carefully!)
-   */
   async flushall() {
     try {
       await redis.flushall();
