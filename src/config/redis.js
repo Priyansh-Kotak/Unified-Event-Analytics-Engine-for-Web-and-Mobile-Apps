@@ -1,79 +1,88 @@
-const Redis = require('ioredis');
+const Redis = require("ioredis");
 
 // Create Redis client
 const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
+  host: process.env.REDIS_HOST || "localhost",
   port: process.env.REDIS_PORT || 6379,
   retryStrategy: (times) => {
+    if (process.env.NODE_ENV === "test" && times > 3) {
+      return null; // Stop retrying in tests
+    }
     const delay = Math.min(times * 50, 2000);
     return delay;
   },
-  maxRetriesPerRequest: 3
+  maxRetriesPerRequest: process.env.NODE_ENV === "test" ? 1 : 3,
+  enableOfflineQueue: process.env.NODE_ENV !== "test",
 });
 
 // Handle connection events
-redis.on('connect', () => {
-  console.log('✅ Redis connected successfully');
+redis.on("connect", () => {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("✅ Redis connected successfully");
+  }
 });
 
-redis.on('error', (error) => {
-  console.error('❌ Redis connection error:', error);
+redis.on("error", (error) => {
+  if (process.env.NODE_ENV !== "test") {
+    console.error("❌ Redis connection error:", error.message);
+  }
 });
 
-redis.on('ready', () => {
-  console.log('✅ Redis is ready to accept commands');
+redis.on("ready", () => {
+  if (process.env.NODE_ENV !== "test") {
+    console.log("✅ Redis is ready to accept commands");
+  }
 });
 
 // Cache helper functions
 const cacheService = {
   /**
    * Get cached data
-   * @param {string} key - Cache key
-   * @returns {Promise<any>} - Parsed JSON data or null
    */
   async get(key) {
     try {
       const data = await redis.get(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      console.error(`Error getting cache for key ${key}:`, error);
+      if (process.env.NODE_ENV !== "test") {
+        console.error(`Error getting cache for key ${key}:`, error.message);
+      }
       return null;
     }
   },
 
   /**
    * Set cache data with expiration
-   * @param {string} key - Cache key
-   * @param {any} value - Data to cache
-   * @param {number} expirationInSeconds - TTL in seconds (default: 300 = 5 minutes)
    */
   async set(key, value, expirationInSeconds = 300) {
     try {
       await redis.setex(key, expirationInSeconds, JSON.stringify(value));
       return true;
     } catch (error) {
-      console.error(`Error setting cache for key ${key}:`, error);
+      if (process.env.NODE_ENV !== "test") {
+        console.error(`Error setting cache for key ${key}:`, error.message);
+      }
       return false;
     }
   },
 
   /**
    * Delete cached data
-   * @param {string} key - Cache key
    */
   async del(key) {
     try {
       await redis.del(key);
       return true;
     } catch (error) {
-      console.error(`Error deleting cache for key ${key}:`, error);
+      if (process.env.NODE_ENV !== "test") {
+        console.error(`Error deleting cache for key ${key}:`, error.message);
+      }
       return false;
     }
   },
 
   /**
    * Delete all keys matching a pattern
-   * @param {string} pattern - Pattern to match (e.g., 'analytics:*')
    */
   async delPattern(pattern) {
     try {
@@ -83,28 +92,51 @@ const cacheService = {
       }
       return true;
     } catch (error) {
-      console.error(`Error deleting cache pattern ${pattern}:`, error);
+      if (process.env.NODE_ENV !== "test") {
+        console.error(
+          `Error deleting cache pattern ${pattern}:`,
+          error.message
+        );
+      }
       return false;
     }
   },
 
   /**
    * Check if key exists
-   * @param {string} key - Cache key
-   * @returns {Promise<boolean>}
    */
   async exists(key) {
     try {
       const result = await redis.exists(key);
       return result === 1;
     } catch (error) {
-      console.error(`Error checking cache existence for key ${key}:`, error);
+      if (process.env.NODE_ENV !== "test") {
+        console.error(
+          `Error checking cache existence for key ${key}:`,
+          error.message
+        );
+      }
       return false;
     }
-  }
+  },
+
+  /**
+   * Flush all data (use carefully!)
+   */
+  async flushall() {
+    try {
+      await redis.flushall();
+      return true;
+    } catch (error) {
+      if (process.env.NODE_ENV !== "test") {
+        console.error("Error flushing cache:", error.message);
+      }
+      return false;
+    }
+  },
 };
 
 module.exports = {
   redis,
-  cacheService
+  cacheService,
 };

@@ -1,4 +1,19 @@
 const analyticsService = require("../services/analytics.service");
+const { App, Event, sequelize } = require("../models");
+const { Op } = require("sequelize");
+
+/**
+ * Get client IP address safely
+ */
+const getClientIp = (req) => {
+  return (
+    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+    req.socket?.remoteAddress ||
+    req.connection?.remoteAddress ||
+    req.ip ||
+    "unknown"
+  );
+};
 
 /**
  * Collect analytics event
@@ -10,7 +25,7 @@ const collectEvent = async (req, res) => {
 
     // Extract IP address if not provided
     if (!eventData.ipAddress) {
-      eventData.ipAddress = req.ip || req.connection.remoteAddress;
+      eventData.ipAddress = getClientIp(req);
     }
 
     // Save event
@@ -187,7 +202,6 @@ const getDashboardOverview = async (req, res) => {
       appIds = apps.map((app) => app.id);
     }
 
-    const { Op } = require("sequelize");
     const whereConditions = { appId: { [Op.in]: appIds } };
 
     // Get total events

@@ -1,29 +1,44 @@
-const logger = require('../utils/logger');
+const logger = require("../utils/logger");
 
 // Request logging middleware
 const requestLogger = (req, res, next) => {
   const startTime = Date.now();
 
+  // Safely get IP address
+  const getClientIp = (req) => {
+    return (
+      req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+      req.socket?.remoteAddress ||
+      req.connection?.remoteAddress ||
+      "unknown"
+    );
+  };
+
+  const ip = getClientIp(req);
+
   // Log request
   logger.info(`${req.method} ${req.url}`, {
     method: req.method,
     url: req.url,
-    ip: req.ip,
-    userAgent: req.get('user-agent')
+    ip: ip,
+    userAgent: req.get("user-agent"),
   });
 
   // Log response when finished
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - startTime;
-    const logLevel = res.statusCode >= 400 ? 'error' : 'info';
-    
-    logger[logLevel](`${req.method} ${req.url} ${res.statusCode} ${duration}ms`, {
-      method: req.method,
-      url: req.url,
-      statusCode: res.statusCode,
-      duration,
-      ip: req.ip
-    });
+    const logLevel = res.statusCode >= 400 ? "error" : "info";
+
+    logger[logLevel](
+      `${req.method} ${req.url} ${res.statusCode} ${duration}ms`,
+      {
+        method: req.method,
+        url: req.url,
+        statusCode: res.statusCode,
+        duration,
+        ip: ip,
+      }
+    );
   });
 
   next();
@@ -31,12 +46,22 @@ const requestLogger = (req, res, next) => {
 
 // Error logging middleware
 const errorLogger = (err, req, res, next) => {
-  logger.error('Application error:', {
+  // Safely get IP address
+  const getClientIp = (req) => {
+    return (
+      req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+      req.socket?.remoteAddress ||
+      req.connection?.remoteAddress ||
+      "unknown"
+    );
+  };
+
+  logger.error("Application error:", {
     error: err.message,
     stack: err.stack,
     method: req.method,
     url: req.url,
-    ip: req.ip
+    ip: getClientIp(req),
   });
 
   next(err);
@@ -44,5 +69,5 @@ const errorLogger = (err, req, res, next) => {
 
 module.exports = {
   requestLogger,
-  errorLogger
+  errorLogger,
 };

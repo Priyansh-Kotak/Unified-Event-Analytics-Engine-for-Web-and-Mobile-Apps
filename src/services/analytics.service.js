@@ -1,6 +1,5 @@
-const { Event, App } = require("../models");
+const { Event, App, sequelize } = require("../models");
 const { Op } = require("sequelize");
-const sequelize = require("../config/database");
 const { cacheService } = require("../config/redis");
 
 class AnalyticsService {
@@ -262,13 +261,15 @@ class AnalyticsService {
     whereConditions.appId = { [Op.in]: appIds };
 
     // Group by time interval
-    const dateFormat = interval === "hour" ? "%Y-%m-%d %H:00:00" : "%Y-%m-%d";
+    // Note: This will work for PostgreSQL
+    const dateFormat =
+      interval === "hour" ? "YYYY-MM-DD HH24:00:00" : "YYYY-MM-DD";
 
     const trends = await Event.findAll({
       where: whereConditions,
       attributes: [
         [
-          sequelize.fn("DATE_FORMAT", sequelize.col("timestamp"), dateFormat),
+          sequelize.fn("TO_CHAR", sequelize.col("timestamp"), dateFormat),
           "period",
         ],
         [sequelize.fn("COUNT", sequelize.col("id")), "count"],
