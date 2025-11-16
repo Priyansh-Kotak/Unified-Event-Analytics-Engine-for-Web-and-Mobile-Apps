@@ -225,18 +225,11 @@ This project is licensed under the MIT License.
 
 ## 👤 Author
 
-Your Name - [@yourhandle](https://twitter.com/yourhandle)
-
-## 🙏 Acknowledgments
-
-- Express.js team
-- Sequelize ORM
-- Redis community
-- All contributors
+Your Name - [Priyansh Kotak](https://www.linkedin.com/in/priyanshkotak/)
 
 ## 📞 Support
 
-For support, email support@yourapp.com or open an issue.
+For support, email priyanshkotak1@gmail.com or open an issue.
 
 ---
 
