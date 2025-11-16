@@ -22,7 +22,7 @@ const options = {
         description: 'Development server'
       },
       {
-        url: 'https://your-production-url.com',
+        url: 'https://analytics-api-production-babf.up.railway.app',
         description: 'Production server'
       }
     ],
